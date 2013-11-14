@@ -1,0 +1,127 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" type="text/css" href="style.css" />
+<title>Readers/Writer Locks</title>
+</head>
+<body>
+
+<h1>Readers/Writer Locks</h1>
+
+<p>A readers/writer lock (rwlock) is used to lock shared memory either for reading or for writing. It allows for one or more threads to lock it for reading or for one thread to lock it for writing, but not both at the same time. This implementation attempts to solve the third <a href="http://en.wikipedia.org/wiki/Readers-writers_problem">Readers-Writers Problem</a>.</p>
+
+<p>There are six routines of interest in rwlock.asm:</p>
+
+<table class="center border">
+<caption>Routines for readers/writer locks.</caption>
+
+<tr>
+<th>Routine</th><th>Purpose</th>
+</tr>
+
+<tr>
+<td><code class="ident">rw_init</code></td><td>Initialize a rwlock</td>
+</tr>
+
+<tr>
+<td><code class="ident">rw_trylock</code></td><td>Try to obtain an exclusive lock for writing without blocking</td>
+</tr>
+
+<tr>
+<td><code class="ident">rw_lock</code></td><td>Obtain an exclusive lock for writing</td>
+</tr>
+
+<tr>
+<td><code class="ident">rw_tryreadlock</code></td><td>Try to obtain a lock for reading without blocking</td>
+</tr>
+
+<tr>
+<td><code class="ident">rw_readlock</code></td><td>Obtain a lock for reading</td>
+</tr>
+
+<tr>
+<td><code class="ident">rw_unlock</code></td><td>Unlock a rwlock</td>
+</tr>
+
+</table>
+
+<p>All routines are called with the address of the rwlock in <code class="reg">HL</code>, and (in the case of <code class="ident">rw_trylock</code> and <code class="ident">rw_tryreadlock</code>) carry is set if the lock was obtained.</p>
+
+<p>To create a rwlock, define a variable and give it three bytes of storage. Be sure to initialize the rwlock with <code class="ident">rw_init</code> before using it.</p>
+
+<p>A readers/writer lock can also be used as a mutex (mutual exclusion variable) simply by not using the <code class="ident">rw_tryreadlock</code> and <code class="ident">rw_readlock</code> routines.</p>
+
+<h2>Example</h2>
+
+<p>Here is a simple example that uses an rwlock. Each block of code is a separate thread. We will assume that the rwlock <code class="ident">mylock</code> has been initialized with <code class="ident">rw_init</code>.</p>
+
+<p>Thread A:</p>
+
+<pre class="code">
+	<span class="inst">LD</span> <span class="reg">HL</span>,<span class="ident">mylock</span>
+	<span class="inst">CALL</span> <span class="ident">rw_lock</span>   <span class="comment">; lock the resource for writing</span>
+	
+	<span class="comment">; write to the resource here...</span>
+	
+	<span class="inst">LD</span> <span class="reg">HL</span>,<span class="ident">mylock</span>
+	<span class="inst">CALL</span> <span class="ident">rw_unlock</span> <span class="comment">; free the resource</span>
+</pre>
+
+<p>Thread B:</p>
+
+<pre class="code">
+	<span class="inst">LD</span> <span class="reg">HL</span>,<span class="ident">mylock</span>
+	<span class="inst">CALL</span> <span class="ident">rw_readlock</span> <span class="comment">; lock the resource for reading</span>
+	
+	<span class="comment">; read the resource here...</span>
+	
+	<span class="inst">LD</span> <span class="reg">HL</span>,<span class="ident">mylock</span>
+	<span class="inst">CALL</span> <span class="ident">rw_unlock</span>   <span class="comment">; free the resource</span>
+</pre>
+
+<p>Thread C:</p>
+
+<pre class="code">
+	<span class="inst">LD</span> <span class="reg">HL</span>,<span class="ident">mylock</span>
+	<span class="inst">CALL</span> <span class="ident">rw_readlock</span> <span class="comment">; lock the resource for reading</span>
+	
+	<span class="comment">; read the resource here...</span>
+	
+	<span class="inst">LD</span> <span class="reg">HL</span>,<span class="ident">mylock</span>
+	<span class="inst">CALL</span> <span class="ident">rw_unlock</span>   <span class="comment">; free the resource</span>
+</pre>
+
+<p>In this example, if either or both thread B and thread C have the lock, then thread A will have to wait for the lock to be completely unlocked before it can proceed. If thread A has the lock, then threads B and C will have to wait for A to release the lock before they can proceed.</p>
+
+<h2>Bugs</h2>
+
+<p>I have not tested rwlock extensively, so bugs may be present in this version. If you find a bug, contact the author about it.</p>
+
+<h2>Contacting the author</h2>
+
+<p>You can contact the author of this library at <a href="mailto:abbrev@gmail.com">abbrev@gmail.com</a>.</p>
+
+<h2>License</h2>
+
+<p>Copyright &copy; 2007 Christopher Williams</p>
+
+<p>This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.</p>
+
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.</p>
+
+<p>You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
+
+<div class="cvs">$Id: rwlock.html,v 1.5 2007/11/21 09:32:05 christop Exp $</div>
+
+</body>
+</html>

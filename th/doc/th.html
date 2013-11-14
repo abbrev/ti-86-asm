@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" type="text/css" href="style.css" />
+<title>Cooperative Multithreading Library</title>
+</head>
+<body>
+
+<h1>Cooperative Multithreading Library</h1>
+
+<p>This is my latest attempt at cooperative multithreading for the Z80 processor. The goals of this version are:</p>
+
+<ul>
+<li>Small size</li>
+<li>Simple design and implementation</li>
+<li>Fast execution</li>
+</ul>
+
+<p>Cooperative multithreading works best with I/O-bound threads. It can also work with compute-bound threads if they yield frequently enough to allow other threads to run.</p>
+
+<h2>Cooperative vs Preemptive Multithreading</h2>
+
+<p>With preemptive multithreading, a thread can run as long as it does not block and still has time left in its time-slice. With cooperative multithreading, a thread can run as long as it does not block. A cooperative thread, therefore, could run indefinitely.</p>
+
+<p>Cooperative multithreading has both advantages and disadvantages over preemptive. Here are a few:</p>
+
+<h3>Advantages of cooperative</h3>
+
+<ul>
+<li>Race conditions are greatly minimized. This allows the multithreading routines (as well as other thread synchronization routines, like <a href="rwlock.html">readers/writer locks</a>) to be simpler, as they are guaranteed not to be preempted while changing shared data structures.</li>
+
+<li>It is more efficient in many cases. A thread can run uninterrupted until it has to block.</li>
+</ul>
+
+<h3>Disadvantages of cooperative</h3>
+
+<ul>
+<li>Making compute-bound threads cooperate with other threads is slightly more difficult. A thread that does not block deprives other threads from processor time.</li>
+
+<li>A thread does not run at regular times. This might be detrimental to a time-sensitive application.</li>
+</ul>
+
+<h2>Using th</h2>
+
+<p>To use th, include the file "th.asm" at the entry point of your program&mdash;typically at address 0xD748 on the TI-86&mdash;and define a label named "<code class="ident">main</code>" where the main program starts (like in a C program). Also, define <code class="const">THREAD_MAX</code> to the maximum number of threads that will run simultaneously in the program.</p>
+
+<ul>
+<li><p>To create a thread, call <code class="ident">th_create</code> with the address of the thread's code in <code class="reg">HL</code>, its stack pointer in <code class="reg">DE</code>, and its argument in <code class="reg">BC</code>. If the call is successful, <code class="ident">th_create</code> returns a pointer to the thread in <code class="reg">HL</code>. Otherwise, it sets the carry flag and a thread is not created.</p>
+
+<p>A thread's stack is a block of memory large enough for the deepest call sequence and variable usage within the thread; it must account for calls to TI-OS routines as well as interrupt handlers that might occur during a thread. This is generally 50 bytes or more. The stack pointer (as one of the arguments to <code class="ident">th_create</code>) is the address above the top (highest address) of the stack. It is the top of the stack because the stack grows <em>downward</em> on the Z80 (as well as in most other processors). For example, if I have a stack at address <code class="ident">mystack</code> and is <code class="ident">MYSTACK_SIZE</code> bytes large, then the stack pointer is <code class="ident">mystack</code>+<code class="ident">MYSTACK_SIZE</code>. That is the value I would load into <code class="reg">DE</code> before I call <code class="ident">th_create</code>.</p>
+
+<p>The new thread will be started with its argument at address <code class="reg">SP</code>+2; that is, the argument is on the stack above the return address, and you can use the following code at the start of a thread's code to get its argument:</p>
+<pre class="code">
+<span class="ident">thread_code</span>:
+	<span class="inst">POP</span> <span class="reg">BC</span>  <span class="comment">; get the return address</span>
+	<span class="inst">POP</span> <span class="reg">HL</span>  <span class="comment">; get the argument</span>
+	<span class="inst">PUSH</span> <span class="reg">HL</span> <span class="comment">; put the argument back</span>
+	<span class="inst">PUSH</span> <span class="reg">BC</span> <span class="comment">; put the return address back</span>
+	
+	<span class="comment">; more thread code...</span>
+	
+	<span class="inst">RET</span>
+</pre></li>
+
+<li>To cancel a thread, load the thread pointer in <code class="reg">HL</code> and call <code class="ident">th_cancel</code>.</li>
+
+<li>To exit a thread, load the exit status in <code class="reg">HL</code> and call <code class="ident">th_exit</code>. Alternatively, you can simply return from the thread (except from the "main" thread) and <code class="ident">th_exit</code> will be called automagically. When the last thread exits, the program terminates.</li>
+
+<li>To join a thread, load the thread pointer in <code class="reg">HL</code> and call <code class="ident">th_join</code>. On success, it will return the thread's exit status. Otherwise, it sets the carry flag.</li>
+
+<li>To make a thread sleep, load the event in <code class="reg">HL</code> and call <code class="ident">th_sleep</code>. The thread will run again when another thread wakes it up.</li>
+
+<li>To wake up threads sleeping on an event, load the event in <code class="reg">HL</code> and call <code class="ident">th_wake</code>. This will wake every thread that is sleeping on that event.</li>
+
+<li>To yield a thread and let other threads run, call <code class="ident">th_yield</code>. This saves all registers, so it's safe to call at any time.</li>
+
+<li>To exit a program completely, call <code class="ident">exit</code>. All threads will terminate, and the program will exit immediately to the hosting environment (e.g., TI-OS). Note: returning from the main thread is equivalent to calling <code class="ident">exit</code>. On the other hand, calling <code class="ident">th_exit</code> from the main thread exits only that thread and allows other threads to run.</li>
+</ul>
+
+<h2>Example Programs</h2>
+
+<p>You can find two example programs that use multithreading in the files testth.asm and produce.asm.</p>
+
+<ul>
+<li><a href="../testth.asm">testth.asm</a> is a simple test of multithreading that increments numbers in one thread and letters in another. It uses <code class="ident">th_cancel</code>.</li>
+
+<li><a href="../produce.asm">produce.asm</a> implements a data pipe (with a one-byte FIFO buffer for simplicity) for communicating between two threads. One thread (producer thread) sends bytes to the pipe, and another thread (consumer thread) receives bytes from the pipe. The <code class="ident">send</code> and <code>receive</code> routines use <code class="ident">th_sleep</code> to block the thread when the pipe is full or empty, respectively. <code class="ident">send</code> and <code class="ident">receive</code> also use <code class="ident">th_wake</code> to notify the other thread(s) that the pipe is not empty or not full, respectively. This demonstrates one of the applications of <code class="ident">th_sleep</code> and <code class="ident">th_wake</code>.</li>
+</ul>
+
+<p>Another application of <code class="ident">th_sleep</code> and <code class="ident">th_wake</code> is for implementing timers: a thread sleeps on a timer until it's expired, and a timer thread (or an interrupt handler) wakes threads when a timer expires.</p>
+
+<h2>Glossary</h2>
+
+<dl>
+
+<dt>Block</dt><dd>See Sleep.</dd>
+
+<dt>Cancel</dt><dd>To stop a thread from running.</dd>
+
+<dt>Compute-bound</dt><dd>Primarily using the processor (CPU) for most of the time, such as long computations that do not input nor output anything.</dd>
+
+<dt>CPU-bound</dt><dd>See Compute-bound.</dd>
+
+<dt>Event</dt><dd>Something that can occur, such as a thread exiting, a data pipe being written to, etc. In this implementation, an event is simply a 16-bit number and can be the address of a data structure or any other arbitrary number, though typically it is the former.</dd>
+
+<dt>Exit status</dt><dd>An integer indicating a thread's status when it exits. The value has meaning only to the application; for example, an exit status of 0 could indicate success, and other values could indicate different errors that might occur in the thread.</dd>
+
+<dt>I/O-bound</dt><dd>Primarily waiting for input or output, such as reading from or writing to a data pipe.</dd>
+
+<dt>Join</dt><dd>Wait for a thread to complete or be canceled. This is a synchronization technique. When a thread exits on its own (i.e., it is finished), a thread can obtains its exit status by "joining" the finished thread.</dd>
+
+<dt>Sleep</dt><dd>To wait for an event.</dd>
+
+<dt>Thread</dt><dd>Short for "thread of execution". One of two or more simultaneously-running tasks. Similar to a process in a multi-tasking operating system.</dd>
+
+<dt>Wake</dt><dd>To notify a thread that an event occurred.</dd>
+
+<dt>Yield</dt><dd>To allow other threads to execute. With cooperative multi-threading, processor-bound threads must yield so other threads can run.</dd>
+
+<dt>Zombie</dt><dd>A thread that has exited but is floating around, waiting for another thread to join it. This is the same concept as a zombie process in Unix systems.</dd>
+
+</dl>
+
+<h2>Bugs</h2>
+
+<p>While I have tested th for bugs and performance, there may be some bugs lurking in the code.</p>
+
+<p>If you find a bug, try to make a small test case that triggers it (the smaller the test case, the better). Make sure it's actually a bug in the library and not in your own code&mdash;parallel computing can be tricky sometimes, after all. Then contact the author with the test case along with any details you know about the bug (such as symptoms). Better yet, fix the bug and send it back to the author.</p>
+
+<h2>Contacting the author</h2>
+
+<p>You can contact the author of this library at <a href="mailto:abbrev@gmail.com">abbrev@gmail.com</a>.</p>
+
+<h2>License</h2>
+
+<p>Copyright &copy; 2007 Christopher Williams</p>
+
+<p>This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.</p>
+
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.</p>
+
+<p>You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
+
+<div class="cvs">$Id: th.html,v 1.6 2007/11/21 09:32:05 christop Exp $</div>
+
+</body>
+</html>
