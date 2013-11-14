@@ -1,0 +1,179 @@
+mnu_month:
+	dw	.title
+	dw	exit_on_clear
+	dw	12
+	
+	dw	.m00,setmonth
+	dw	.m01,setmonth
+	dw	.m02,setmonth
+	dw	.m03,setmonth
+	dw	.m04,setmonth
+	dw	.m05,setmonth
+	dw	.m06,setmonth
+	dw	.m07,setmonth
+	dw	.m08,setmonth
+	dw	.m09,setmonth
+	dw	.m10,setmonth
+	dw	.m11,setmonth
+	
+.title	db	"Month",0
+.m00	db	"January",0
+.m01	db	"February",0
+.m02	db	"March",0
+.m03	db	"April",0
+.m04	db	"May",0
+.m05	db	"June",0
+.m06	db	"July",0
+.m07	db	"August",0
+.m08	db	"September",0
+.m09	db	"October",0
+.m10	db	"November",0
+.m11	db	"December",0
+
+mnu_day:
+	dw	.title
+	dw	exit_on_clear
+	dw	31	; this is set in setmonth
+	
+	dw	.d00,setday
+	dw	.d01,setday
+	dw	.d02,setday
+	dw	.d03,setday
+	dw	.d04,setday
+	dw	.d05,setday
+	dw	.d06,setday
+	dw	.d07,setday
+	dw	.d08,setday
+	dw	.d09,setday
+	dw	.d10,setday
+	dw	.d11,setday
+	dw	.d12,setday
+	dw	.d13,setday
+	dw	.d14,setday
+	dw	.d15,setday
+	dw	.d16,setday
+	dw	.d17,setday
+	dw	.d18,setday
+	dw	.d19,setday
+	dw	.d20,setday
+	dw	.d21,setday
+	dw	.d22,setday
+	dw	.d23,setday
+	dw	.d24,setday
+	dw	.d25,setday
+	dw	.d26,setday
+	dw	.d27,setday
+	dw	.d28,setday
+	dw	.d29,setday
+	dw	.d30,setday
+	
+.title	db	"Day",0
+.d00	db	"01",0
+.d01	db	"02",0
+.d02	db	"03",0
+.d03	db	"04",0
+.d04	db	"05",0
+.d05	db	"06",0
+.d06	db	"07",0
+.d07	db	"08",0
+.d08	db	"09",0
+.d09	db	"10",0
+.d10	db	"11",0
+.d11	db	"12",0
+.d12	db	"13",0
+.d13	db	"14",0
+.d14	db	"15",0
+.d15	db	"16",0
+.d16	db	"17",0
+.d17	db	"18",0
+.d18	db	"19",0
+.d19	db	"20",0
+.d20	db	"21",0
+.d21	db	"22",0
+.d22	db	"23",0
+.d23	db	"24",0
+.d24	db	"25",0
+.d25	db	"26",0
+.d26	db	"27",0
+.d27	db	"28",0
+.d28	db	"29",0
+.d29	db	"30",0
+.d30	db	"31",0
+
+mnu_hour:
+	dw	.title
+	dw	exit_on_clear
+	dw	24
+	
+	dw	.h00,sethour
+	dw	.h01,sethour
+	dw	.h02,sethour
+	dw	.h03,sethour
+	dw	.h04,sethour
+	dw	.h05,sethour
+	dw	.h06,sethour
+	dw	.h07,sethour
+	dw	.h08,sethour
+	dw	.h09,sethour
+	dw	.h10,sethour
+	dw	.h11,sethour
+	dw	.h12,sethour
+	dw	.h13,sethour
+	dw	.h14,sethour
+	dw	.h15,sethour
+	dw	.h16,sethour
+	dw	.h17,sethour
+	dw	.h18,sethour
+	dw	.h19,sethour
+	dw	.h20,sethour
+	dw	.h21,sethour
+	dw	.h22,sethour
+	dw	.h23,sethour
+	
+.title	db	"Hour",0
+.h00	db	"00",0
+.h01	db	"01",0
+.h02	db	"02",0
+.h03	db	"03",0
+.h04	db	"04",0
+.h05	db	"05",0
+.h06	db	"06",0
+.h07	db	"07",0
+.h08	db	"08",0
+.h09	db	"09",0
+.h10	db	"10",0
+.h11	db	"11",0
+.h12	db	"12",0
+.h13	db	"13",0
+.h14	db	"14",0
+.h15	db	"15",0
+.h16	db	"16",0
+.h17	db	"17",0
+.h18	db	"18",0
+.h19	db	"19",0
+.h20	db	"20",0
+.h21	db	"21",0
+.h22	db	"22",0
+.h23	db	"23",0
+
+	if	0
+mnu_minute:
+	dw	.title
+	dw	exit_on_clear
+	dw	6
+	
+	dw	.m00,setminute
+	dw	.m01,setminute
+	dw	.m02,setminute
+	dw	.m03,setminute
+	dw	.m04,setminute
+	dw	.m05,setminute
+	
+.title	db	"Minute:",0
+.m00	db	"00",0
+.m01	db	"10",0
+.m02	db	"20",0
+.m03	db	"30",0
+.m04	db	"40",0
+.m05	db	"50",0
+	endif
