@@ -1,3 +1,6 @@
+Draw
+====
+
 This is demo drawing program that uses the small mouse library that I wrote.
 This drawing program is very minimal: drawing and erasing.
 
