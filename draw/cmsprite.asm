@@ -4,17 +4,17 @@
 ; tested a limited amount; works as far as testing went
 
 rrad	macro
-	jp	.right
-.left	rra
-.right	rr	d
-	djnz	.left
+	jp	@right
+@left	rra
+@right	rr	d
+	djnz	@left
 	endm
 
 rrda	macro
-	jp	.right
-.left	rr	d
-.right	rra
-	djnz	.left
+	jp	@right
+@left	rr	d
+@right	rra
+	djnz	@left
 	endm
 
 ; input:

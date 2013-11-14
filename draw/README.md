@@ -11,6 +11,5 @@ can use one of the built-in cursors or provide its own cursors, which is the
 case with this drawing application.
 
 This program was written for the tpasm assembler. I know that it builds with
-version 1.2 but not with version 1.6 (this later version handles local labels
-differently). This should be easily fixable, though.
+versions 1.2 and 1.6.
 
