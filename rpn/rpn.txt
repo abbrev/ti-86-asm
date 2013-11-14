@@ -1,0 +1,44 @@
+RPN interpreter, somewhat in the style of Sweet 16
+
+arithmetic:
+add		// add (num1 num2 -- num3)
+sub		// subtract (num1 num2 -- num3)
+mul		// multiply (num1 num2 -- num3)
+div		// divide (num1 num2 -- num3)
+mod		// modulo (num1 num2 -- num3)
+exp		// exponent (num1 num2 -- num3)
+sqrt		// square root (num1 -- num2)
+inc		// increment (num1 -- num2)
+dec		// decrement (num1 -- num2)
+
+stack control:
+push value	// (- -- value)
+dup		// duplicate first value on the stack (value -- value value)
+exch		// exchange top two values (value1 value2 -- value2 value1)
+pop		// (value -- -)
+index		// (valuen ... value0 n -- valuen ... value0 value n)
+
+memory:
+store		// store to addr (addr value -- -)
+load		// load from addr (addr -- value)
+
+compare:
+eq		// equal (num1 num2 -- result)
+ne		// not equal (num1 num2 -- result)
+gt		// greater than (num1 num2 -- result)
+lt		// less than (num1 num2 -- result)
+ge		// greater than or equal (num1 num2 -- result)
+le		// less than or equal (num1 num2 -- result)
+
+flow control:
+for		// (initial increment limit proc -- -)
+if		// (bool proc -- -)
+ifelse		// (bool ifproc elseproc -- -)
+repeat		// repeat n times (n proc -- -)
+loop		// loop forever until exit (proc -- -)
+exit		// exit a loop
+
+misc:
+bs		// branch to subroutine (addr -- -)
+rts		// return from subroutine (- -- -)
+rtn		// return to Z80 code
