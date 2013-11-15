@@ -96,7 +96,7 @@ up	LD	A,(roll)
 	CALL	cos
 	LD	L,A
 	LD	A,-4
-	CALL	_d971
+	CALL	muls
 	ADD	HL,HL
 	LD	A,L
 	RLA
@@ -113,7 +113,7 @@ down	LD	A,(roll)
 	CALL	cos
 	LD	L,A
 	LD	A,4
-	CALL	_d971
+	CALL	muls
 	ADD	HL,HL
 	LD	A,L
 	RLA
@@ -177,7 +177,7 @@ draw_screen
 	SUB	viewport_width/2
 	LD	L,A
 	LD	A,(s_roll)
-	CALL	_d971
+	CALL	muls
 	ADD	HL,HL
 	LD	A,H
 	PUSH	AF
@@ -185,7 +185,7 @@ draw_screen
 	SUB	viewport_height/2
 	LD	L,A
 	LD	A,(c_roll)
-	CALL	_d971
+	CALL	muls
 	ADD	HL,HL
 	POP	AF
 	ADD	A,H
@@ -326,79 +326,7 @@ cosines	db  127,  127,  126,  126,  125,  123,  122,  120
 ; end of cosine table (129 bytes)
 
 
-; routine
-_d971	LD	D,A
-	LD	C,0x00
-	BIT	7,L
-	JR	Z,.d97d
-	LD	A,L
-	NEG
-	LD	L,A
-	INC	C
-.d97d	BIT	7,D
-	JR	Z,.d986
-	LD	A,D
-	NEG
-	LD	D,A
-	DEC	C
-.d986	LD	A,D
-	CALL	multiply
-	LD	A,C
-	OR	A
-	RET	Z
-	XOR	A
-	SUB	L
-	LD	L,A
-	LD	A,0x00
-	SBC	A,H
-	LD	H,A
-	RET
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-multiply:
-	LD	D,0x00
-	LD	E,L
-	LD	H,D
-	RRCA
-	JR	C,$+3
-	LD	L,D
-	SLA	E
-	RL	D
-	RRCA
-	JR	NC,$+3
-	ADD	HL,DE
-	SLA	E
-	RL	D
-	RRCA
-	JR	NC,$+3
-	ADD	HL,DE
-	SLA	E
-	RL	D
-	RRCA
-	JR	NC,$+3
-	ADD	HL,DE
-	SLA	E
-	RL	D
-	RRCA
-	JR	NC,$+3
-	ADD	HL,DE
-	SLA	E
-	RL	D
-	RRCA
-	JR	NC,$+3
-	ADD	HL,DE
-	SLA	E
-	RL	D
-	RRCA
-	JR	NC,$+3
-	ADD	HL,DE
-	SLA	E
-	RL	D
-	RRCA
-	RET	NC
-	ADD	HL,DE
-	RET
+	include "mul.inc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
