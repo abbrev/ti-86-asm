@@ -1,0 +1,127 @@
+= Cooperative Multithreading Library
+
+This is my latest attempt at cooperative multithreading for the Z80 processor. The goals of this version are:
+
+* Small size
+* Simple design and implementation
+* Fast execution
+
+Cooperative multithreading works best with I/O-bound threads. It can also work with compute-bound threads if they yield frequently enough to allow other threads to run.
+
+== Cooperative vs Preemptive Multithreading
+
+With preemptive multithreading, a thread can run as long as it does not block and still has time left in its time-slice. With cooperative multithreading, a thread can run as long as it does not block. A cooperative thread, therefore, could run indefinitely.
+
+Cooperative multithreading has both advantages and disadvantages over preemptive. Here are a few:
+
+=== Advantages of cooperative
+
+* Race conditions are greatly minimized. This allows the multithreading routines (as well as other thread synchronization routines, like link:rwlock.adoc[readers/writer locks]) to be simpler, as they are guaranteed not to be preempted while changing shared data structures.
+* It is more efficient in many cases. A thread can run uninterrupted until it has to block.
+
+=== Disadvantages of cooperative
+
+* Making compute-bound threads cooperate with other threads is slightly more difficult. A thread that does not block deprives other threads from processor time.
+* A thread does not run at regular times. This might be detrimental to a time-sensitive application.
+
+== Using th
+
+To use th, include the file "th.asm" at the entry point of your program&mdash;typically at address 0xD748 on the TI-86&mdash;and define a label named "[.ident]``main``" where the main program starts (like in a C program). Also, define [.const]``THREAD_MAX`` to the maximum number of threads that will run simultaneously in the program.
+
+* To create a thread, call [.ident]``th_create`` with the address of the thread's code in [.reg]``HL``, its stack pointer in [.reg]``DE``, and its argument in [.reg]``BC``. If the call is successful, [.ident]``th_create`` returns a pointer to the thread in [.reg]``HL``. Otherwise, it sets the carry flag and a thread is not created.
++
+A thread's stack is a block of memory large enough for the deepest call sequence and variable usage within the thread; it must account for calls to TI-OS routines as well as interrupt handlers that might occur during a thread. This is generally 50 bytes or more. The stack pointer (as one of the arguments to [.ident]``th_create``) is the address above the top (highest address) of the stack. It is the top of the stack because the stack grows _downward_ on the Z80 (as well as in most other processors). For example, if I have a stack at address [.ident]``mystack`` and is [.ident]``MYSTACK_SIZE`` bytes large, then the stack pointer is [.ident]``mystack``+[.ident]``MYSTACK_SIZE``. That is the value I would load into [.reg]``DE`` before I call [.ident]``th_create``.
++
+The new thread will be started with its argument at address [.reg]``SP``+2; that is, the argument is on the stack above the return address, and you can use the following code at the start of a thread's code to get its argument:
++
+[source,asm]
+----
+thread_code:
+	POP BC  ; get the return address
+	POP HL  ; get the argument
+	PUSH HL ; put the argument back
+	PUSH BC ; put the return address back
+
+	; more thread code...
+
+	RET
+----
+
+* To cancel a thread, load the thread pointer in [.reg]``HL`` and call [.ident]``th_cancel``.
+
+* To exit a thread, load the exit status in [.reg]``HL`` and call [.ident]``th_exit``. Alternatively, you can simply return from the thread (except from the "main" thread) and [.ident]``th_exit`` will be called automagically. When the last thread exits, the program terminates.
+
+* To join a thread, load the thread pointer in [.reg]``HL`` and call [.ident]``th_join``. On success, it will return the thread's exit status. Otherwise, it sets the carry flag.
+
+* To make a thread sleep, load the event in [.reg]``HL`` and call [.ident]``th_sleep``. The thread will run again when another thread wakes it up.
+
+* To wake up threads sleeping on an event, load the event in [.reg]``HL`` and call [.ident]``th_wake``. This will wake every thread that is sleeping on that event.
+
+* To yield a thread and let other threads run, call [.ident]``th_yield``. This saves all registers, so it's safe to call at any time.
+
+* To exit a program completely, call [.ident]``exit``. All threads will terminate, and the program will exit immediately to the hosting environment (e.g., TI-OS). Note: returning from the main thread is equivalent to calling [.ident]``exit``. On the other hand, calling [.ident]``th_exit`` from the main thread exits only that thread and allows other threads to run.
+
+== Example Programs
+
+You can find two example programs that use multithreading in the files testth.asm and produce.asm.
+
+* link:../testth.asm[testth.asm] is a simple test of multithreading that increments numbers in one thread and letters in another. It uses [.ident]``th_cancel``.
+* link:../produce.asm[produce.asm] implements a data pipe (with a one-byte FIFO buffer for simplicity) for communicating between two threads. One thread (producer thread) sends bytes to the pipe, and another thread (consumer thread) receives bytes from the pipe. The [.ident]``send`` and ``receive`` routines use [.ident]``th_sleep`` to block the thread when the pipe is full or empty, respectively. [.ident]``send`` and [.ident]``receive`` also use [.ident]``th_wake`` to notify the other thread(s) that the pipe is not empty or not full, respectively. This demonstrates one of the applications of [.ident]``th_sleep`` and [.ident]``th_wake``.
+
+Another application of [.ident]``th_sleep`` and [.ident]``th_wake`` is for implementing timers: a thread sleeps on a timer until it's expired, and a timer thread (or an interrupt handler) wakes threads when a timer expires.
+
+== Glossary
+
+Block:: See Sleep.
+
+Cancel:: To stop a thread from running.
+
+Compute-bound:: Primarily using the processor (CPU) for most of the time, such as long computations that do not input nor output anything.
+
+CPU-bound:: See Compute-bound.
+
+Event:: Something that can occur, such as a thread exiting, a data pipe being written to, etc. In this implementation, an event is simply a 16-bit number and can be the address of a data structure or any other arbitrary number, though typically it is the former.
+
+Exit status:: An integer indicating a thread's status when it exits. The value has meaning only to the application; for example, an exit status of 0 could indicate success, and other values could indicate different errors that might occur in the thread.
+
+I/O-bound:: Primarily waiting for input or output, such as reading from or writing to a data pipe.
+
+Join:: Wait for a thread to complete or be canceled. This is a synchronization technique. When a thread exits on its own (i.e., it is finished), a thread can obtains its exit status by "joining" the finished thread.
+
+Sleep:: To wait for an event.
+
+Thread:: Short for "thread of execution". One of two or more simultaneously-running tasks. Similar to a process in a multi-tasking operating system.
+
+Wake:: To notify a thread that an event occurred.
+
+Yield:: To allow other threads to execute. With cooperative multi-threading, processor-bound threads must yield so other threads can run.
+
+Zombie:: A thread that has exited but is floating around, waiting for another thread to join it. This is the same concept as a zombie process in Unix systems.
+
+== Bugs
+
+While I have tested th for bugs and performance, there may be some bugs lurking in the code.
+
+If you find a bug, try to make a small test case that triggers it (the smaller the test case, the better). Make sure it's actually a bug in the library and not in your own code&mdash;parallel computing can be tricky sometimes, after all. Then contact the author with the test case along with any details you know about the bug (such as symptoms). Better yet, fix the bug and send it back to the author.
+
+== Contacting the author
+
+You can contact the author of this library at abbrev@gmail.com.
+
+== License
+
+Copyright &copy; 2007 Christopher Williams
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA

@@ -1,0 +1,95 @@
+= Readers/Writer Locks
+
+A readers/writer lock (rwlock) is used to lock shared memory either for reading or for writing. It allows for one or more threads to lock it for reading or for one thread to lock it for writing, but not both at the same time. This implementation attempts to solve the third http://en.wikipedia.org/wiki/Readers-writers_problem[Readers-Writers Problem].
+
+There are six routines of interest in rwlock.asm:
+
+.Routines for readers/writer locks.
+[cols='4a,8a']
+|===
+|Routine                    |Purpose
+
+|[.ident]``rw_init``        |Initialize a rwlock
+|[.ident]``rw_trylock``     |Try to obtain an exclusive lock for writing without blocking
+|[.ident]``rw_lock``        |Obtain an exclusive lock for writing
+|[.ident]``rw_tryreadlock`` |Try to obtain a lock for reading without blocking
+|[.ident]``rw_readlock``    |Obtain a lock for reading
+|[.ident]``rw_unlock``      |Unlock a rwlock
+|===
+
+All routines are called with the address of the rwlock in [.reg]``HL``, and (in the case of [.ident]``rw_trylock`` and [.ident]``rw_tryreadlock``) carry is set if the lock was obtained.
+
+To create a rwlock, define a variable and give it three bytes of storage. Be sure to initialize the rwlock with [.ident]``rw_init`` before using it.
+
+A readers/writer lock can also be used as a mutex (mutual exclusion variable) simply by not using the [.ident]``rw_tryreadlock`` and [.ident]``rw_readlock`` routines.
+
+== Example
+
+Here is a simple example that uses an rwlock. Each block of code is a separate thread. We will assume that the rwlock [.ident]``mylock`` has been initialized with [.ident]``rw_init``.
+
+Thread A:
+
+[source,asm]
+----
+	LD HL,mylock
+	CALL rw_lock   ; lock the resource for writing
+
+	; write to the resource here...
+
+	LD HL,mylock
+	CALL rw_unlock ; free the resource
+----
+
+Thread B:
+
+[source,asm]
+----
+	LD HL,mylock
+	CALL rw_readlock ; lock the resource for reading
+
+	; read the resource here...
+
+	LD HL,mylock
+	CALL rw_unlock   ; free the resource
+----
+
+Thread C:
+
+[source,asm]
+----
+	LD HL,mylock
+	CALL rw_readlock ; lock the resource for reading
+
+	; read the resource here...
+
+	LD HL,mylock
+	CALL rw_unlock   ; free the resource
+----
+
+In this example, if either or both thread B and thread C have the lock, then thread A will have to wait for the lock to be completely unlocked before it can proceed. If thread A has the lock, then threads B and C will have to wait for A to release the lock before they can proceed.
+
+== Bugs
+
+I have not tested rwlock extensively, so bugs may be present in this version. If you find a bug, contact the author about it.
+
+== Contacting the author
+
+You can contact the author of this library at abbrev@gmail.com.
+
+== License
+
+Copyright &copy; 2007 Christopher Williams
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA

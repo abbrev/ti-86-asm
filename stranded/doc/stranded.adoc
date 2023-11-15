@@ -1,0 +1,58 @@
+= Stranded for TI-86
+:figure-caption!:
+
+== Introduction
+
+This is the game of Stranded for the TI-86. It is based on the game by the same name in "Games Commodores Play" by Philip W. Dennis and Greg Minter (ISBN http://www.amazon.com/Games-Commodores-Play-P-Dennis/dp/0881901210/sr=11-1/qid=1167882225/ref=sr_11_1/105-2418665-2693248[0881901210 (second printing)] or http://www.amazon.com/Games-Commodores-Play-Mark-Capella/dp/0835924238/sr=1-1/qid=1167882058/ref=sr_1_1/105-2418665-2693248?ie=UTF8&amp;s=books[0835924238 (first printing)]). Despite its age (or because of it), this is a great book for game ideas. It's also good for learning how to write games. It has 12 text games and 25 graphic action games, and the games are well-commented.
+
+Copyright 2006 Christopher Williams. Email: abbrev@gmail.com
+
+== How to Play
+
+Stranded is a game for two players. Both players are placed in an 8 x 8 board. The players take turns. During a turn, a player moves his piece to an empty square in one of eight directions. Then the player blocks out another empty square, making it unenterable. The first player who is unable to move loses the game.
+
+Use the arrow keys to select a square, and press 2nd to block or move to that
+square.
+
+== Screenshots
+
+Here are some screenshots of Stranded.
+
+.Title screen
+--
+image::stranded0.gif[,256,128,role="thumb"]
+--
+
+.A new game
+--
+image::stranded1.gif[,256,128,role="thumb"]
+--
+
+.Player 1 is getting trapped
+--
+image::stranded2.gif[,256,128,role="thumb"]
+--
+
+.Player 2 strands player 1 for the win!
+--
+image::stranded3.gif[,256,128,role="thumb"]
+--
+
+
+== History
+
+This program has an interesting history. It is actually the first assembly game I tried to write while I was learning the Z80 assembly language in 1999.
+
+In just a couple days in March of 1999 I wrote most of the game (all of the game logic and most of the user interface). It didn't work as I had hoped (it didn't display anything), but it didn't crash. It also properly exited when the EXIT key was pressed (yay). I set this game aside to work on other stuff.
+
+A couple of years later, I played around with a http://www.ticalc.org/archives/files/fileinfo/91/9187.html[SmallC compiler], and I rewrote the game in C. It worked well. I spent many hours optimizing it, and I managed to increase the speed a little and reduce the size from 5KB down to 3KB by writing more rules for the peep-hole optimizer. I even sent this game to a classmate's TI-86. I think she was impressed. Since I had a working version of this game, I became less interested in fixing the assembly version. I set this game aside again for several more years.
+
+That brings me to now. Around the turn of the year (2007), I started rewriting the game again. I started by debugging/optimizing the helper functions (sprite drawing routine, get square address routine, etc.). Then I fixed a lot of bugs involving confusion about the "cp" instruction and the condition codes (I didn't understand them very well 8 years ago). I removed a few unnecessary global variables and functions, shortened some functions considerably, and made the whole program more readable. Now it works without bugs (as far as I know...). It's also much smaller than the C version (less than 900 bytes versus 3K bytes).
+
+== To Do
+
+Here are some things I'd _like_ to do, not necessarily things I _will_ do.
+
+* Improve the user interface.
+* Add linked play between two calculators.
+* Play against the calculator.

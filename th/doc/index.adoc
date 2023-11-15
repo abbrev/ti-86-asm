@@ -1,0 +1,39 @@
+= th
+
+The following pages describe both the th library and the supplementary rwlock library and how to use them:
+
+* link:th.adoc[Cooperative Multithreading library]
+* link:rwlock.adoc[Readers/Writer Locks]
+
+== Assumptions
+
+Here are some assumptions made in the libraries and in the documentation:
+
+* You know how to write assembly language. If you don't, then why are you trying to do multithreading in assembly language?
+* You have some use for multithreading.
+* You use http://www.sqrt.com/[tpasm] (and possibly http://www.ticalc.org/archives/files/fileinfo/339/33997.html[other utilities] for it), your assembler accepts tpasm's syntax, or you can convert the assembly-language files to your assembler's syntax.
+* You define the starting address of an uninitialized segment named "data", used for data (surprise, surprise!).
+
+Other assumptions are made, but those are the major ones.
+
+== Contacting the author
+
+You can contact the author of these libraries at abbrev@gmail.com.
+
+== License
+
+Copyright &copy; 2007 Christopher Williams
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA

@@ -1,0 +1,398 @@
+= String handling functions
+
+////
+// css from index.html for syntax highlighting
+
+/* programming code styles */
+
+/* data type */
+code .type, code.type {
+	color: #600;
+	font-weight: bold;
+}
+
+/* register */
+code .reg, code.reg {
+	color: #600;
+}
+
+/* identifier (variables, function names) */
+code .ident, code.ident {
+	color: black;
+}
+////
+
+Copyright &copy; 2007 Christopher Williams (abbrev@gmail.com).
+
+== Contents
+
+* link:#introduction[Introduction]
+* link:#c-function-prototypes[C function prototypes]
+* link:#calling-the-functions[Calling the functions]
+* link:#implementation-notes[Implementation notes]
+* link:#bugs[Bugs]
+* link:#version-history[Version History]
+
+[#introduction]
+== Introduction
+
+This is an implementation for the Z80 of the string handling functions found in the ANSI C Standard Library. All of the functions, except for two, are implemented. The "POSIX" locale is assumed in functions where applicable. Here is a complete list of the functions in the Standard Library:
+
+* link:#memchr[memchr]
+* link:#memcmp[memcmp]
+* link:#memcpy[memcpy]
+* link:#memmove[memmove]
+* link:#memset[memset]
+* link:#strcat[strcat]
+* link:#strchr[strchr]
+* link:#strcmp[strcmp]
+* link:#strcmp[strcoll] (same as link:#strcmp[strcmp] in POSIX locale)
+* link:#strcpy[strcpy]
+* link:#strcspn[strcspn]
+* strerror*
+* link:#strlen[strlen]
+* link:#strncat[strncat]
+* link:#strncmp[strncmp]
+* link:#strncpy[strncpy]
+* link:#strpbrk[strpbrk]
+* link:#strrchr[strrchr]
+* link:#strspn[strspn]
+* link:#strstr[strstr]
+* strtok*
+* link:#strxfrm[strxfrm] (same as link:#strncpy[strncpy]+link:#strlen[strlen] in POSIX locale)
+
+*These functions are not implemented (yet).
+
+Note: Strings are zero-terminated (end with a 0 byte), as in C; this allows them to be any length.
+
+[#c-function-prototypes]
+== C function prototypes
+
+For reference, here are the C function prototypes for all of the functions:
+
+[source,c]
+----
+void *memchr(const void *s, int c, size_t n);
+int memcmp(const void *s1, const void *s2, size_t n);
+void *memcpy(void *s1, const void *s2, size_t n);
+void *memmove(void *s1, const void *s2, size_t n);
+void *memset(void *s, int c, size_t n);
+char *strcat(char *s1, const char *s2);
+char *strchr(const char *s, int c);
+int strcmp(const char *s1, const char *s2);
+int strcoll(const char *s1, const char *s2);
+char *strcpy(char *s1, const char *s2);
+size_t strcspn(const char *s1, const char *s2);
+char *strerror(int errcode);
+size_t strlen(const char *s);
+char *strncat(char *s1, const char *s2, size_t n);
+int strncmp(const char *s1, const char *s2, size_t n);
+char *strncpy(char *s1, const char *s2, size_t n);
+char *strpbrk(const char *s1, const char *s2);
+char *strrchr(const char *s, int c);
+size_t strspn(const char *s1, const char *s2);
+char *strstr(const char *s1, const char *s2);
+char *strtok(char *s1, const char *s2);
+size_t strxfrm(char *s1, const char *s2, size_t n);
+----
+
+[#calling-the-functions]
+== Calling the functions
+
+=== Calling convention for all functions
+
+All of the functions follow a common convention for arguments and return values.
+
+==== Inputs
+
+* For functions that use one string, [.reg]``HL`` contains its address.
+* For functions that use two strings, [.reg]``DE`` contains the address of the first string, and [.reg]``HL`` contains the address of the second string.
+* For a length argument, [.reg]``BC`` contains the length.
+* For a character argument, [.reg]``E`` contains the character.
+
+==== Outputs
+
+* [.reg]``HL`` contains the address of a string or character.
+* [.reg]``A`` contains the result of a comparison:
+** [.reg]``A`` &lt; 0 if [.ident]``s1`` &lt; [.ident]``s2``
+** [.reg]``A`` = 0 if [.ident]``s1`` = [.ident]``s2``
+** [.reg]``A`` &gt; 0 if [.ident]``s1`` &gt; [.ident]``s2``
+* Carry flag indicates that the character(s) was/were not found (this is an extension to the C standard to facilitate assembly programming).
+
+Here are the inputs and outputs of each of the functions in detail:
+
+[#memchr]
+== memchr - scan memory for a character
+
+==== Input
+
+* [.reg]``HL`` = [.ident]``s``
+* [.reg]``BC`` = [.ident]``n`` (number of bytes in [.ident]``s``)
+* [.reg]``E`` = [.ident]``c`` (byte to find)
+
+==== Output
+
+* [.reg]``HL`` = address of matching byte, or NULL if byte is not found
+* Z80 extension: carry is set if byte is not found
+
+[#memcmp]
+== memcmp - compare memory areas
+
+==== Input
+
+* [.reg]``DE`` = [.ident]``s1``
+* [.reg]``HL`` = [.ident]``s2``
+* [.reg]``BC`` = [.ident]``n``
+
+==== Output
+
+* [.reg]``A`` &lt; 0 if [.ident]``s1`` &lt; [.ident]``s2``
+* [.reg]``A`` = 0 if [.ident]``s1`` = [.ident]``s2``
+* [.reg]``A`` &gt; 0 if [.ident]``s1`` &gt; [.ident]``s2``
+
+[#memcpy]
+== memcpy - copy memory area
+
+==== Input
+
+* [.reg]``DE`` = [.ident]``dest``
+* [.reg]``HL`` = [.ident]``src``
+* [.reg]``BC`` = [.ident]``n`` (number of bytes to copy)
+
+==== Output
+
+* [.reg]``HL`` = [.ident]``dest``
+
+[#memmove]
+== memmove - copy memory area
+
+==== Input
+
+* [.reg]``DE`` = [.ident]``dest``
+* [.reg]``HL`` = [.ident]``src``
+* [.reg]``BC`` = [.ident]``n`` (number of bytes to copy)
+
+==== Output
+
+* [.reg]``HL`` = [.ident]``dest``
+
+[#memset]
+== memset - fill memory with a constant byte
+
+==== Input
+
+* [.reg]``HL`` = [.ident]``s``
+* [.reg]``BC`` = [.ident]``n`` (number of bytes to copy)
+* [.reg]``E`` = [.ident]``c`` (byte to fill)
+
+==== Output
+
+* [.reg]``HL`` = [.ident]``s``
+
+[#strcat]
+== strcat - concatenate two strings
+
+==== Input
+
+* [.reg]``DE`` = [.ident]``dest``
+* [.reg]``HL`` = [.ident]``src``
+
+==== Output
+
+* [.reg]``HL`` = [.ident]``dest``
+
+[#strchr]
+== strchr - locate character in string
+
+==== Input
+
+* [.reg]``HL`` = [.ident]``s``
+* [.reg]``E`` = [.ident]``c`` (character to find)
+
+==== Output
+
+* [.reg]``HL`` = address of matching byte, or NULL if character is not found
+* Z80 extension: carry is set if character is not found
+
+[#strcmp]
+== strcmp - compare two strings
+
+==== Input
+
+* [.reg]``DE`` = [.ident]``s1``
+* [.reg]``HL`` = [.ident]``s2``
+
+==== Output
+
+* [.reg]``A`` &lt; 0 if [.ident]``s1`` &lt; [.ident]``s2``
+* [.reg]``A`` = 0 if [.ident]``s1`` = [.ident]``s2``
+* [.reg]``A`` &gt; 0 if [.ident]``s1`` &gt; [.ident]``s2``
+
+[#strcpy]
+== strcpy - copy a string
+
+==== Input
+
+* [.reg]``DE`` = [.ident]``dest``
+* [.reg]``HL`` = [.ident]``src``
+
+==== Output
+
+* [.reg]``HL`` = [.ident]``dest``
+
+[#strcspn]
+== strcspn - search a string for a set of characters
+
+==== Input
+
+* [.reg]``DE`` = [.ident]``s``
+* [.reg]``HL`` = [.ident]``reject``
+
+==== Output
+
+* [.reg]``HL`` = number of characters in the initial segment of [.ident]``s`` which are not in [.ident]``reject``
+
+[#strlen]
+== strlen - calculate the length of a string
+
+==== Input
+
+* [.reg]``HL`` = [.ident]``s``
+
+==== Output
+
+* [.reg]``HL`` = number of characters in [.ident]``s``
+
+[#strncat]
+== strncat - concatenate two strings
+
+==== Input
+
+* [.reg]``DE`` = [.ident]``dest``
+* [.reg]``HL`` = [.ident]``src``
+* [.reg]``BC`` = [.ident]``n`` (maximum number of bytes to copy from [.ident]``src``)
+
+==== Output
+
+* [.reg]``HL`` = [.ident]``dest``
+
+[#strncmp]
+== strncmp - compare two strings
+
+==== Input
+
+* [.reg]``DE`` = [.ident]``s1``
+* [.reg]``HL`` = [.ident]``s2``
+* [.reg]``BC`` = [.ident]``n`` (maximum number of bytes to compare)
+
+==== Output
+
+* [.reg]``A`` &lt; 0 if [.ident]``s1`` &lt; [.ident]``s2``
+* [.reg]``A`` = 0 if [.ident]``s1`` = [.ident]``s2``
+* [.reg]``A`` &gt; 0 if [.ident]``s1`` &gt; [.ident]``s2``
+
+[#strncpy]
+== strncpy - copy a string
+
+==== Input
+
+* [.reg]``DE`` = [.ident]``dest``
+* [.reg]``HL`` = [.ident]``src``
+* [.reg]``BC`` = [.ident]``n`` (maximum number of bytes to copy)
+
+==== Output
+
+* [.reg]``HL`` = [.ident]``dest``
+
+[#strpbrk]
+== strpbrk - search a string for any of a set of characters
+
+==== Input
+
+* [.reg]``DE`` = [.ident]``s``
+* [.reg]``HL`` = [.ident]``accept``
+
+==== Output
+
+* [.reg]``HL`` = address of character in [.ident]``s`` that matches one of the characters in [.ident]``accept``, or NULL if no such character is found
+* Z80 extension: carry is set if character is not found
+
+[#strrchr]
+== strrchr - locate character in string
+
+==== Input
+
+* [.reg]``HL`` = [.ident]``s``
+* [.reg]``E`` = [.ident]``c`` (character to find)
+
+==== Output
+
+* [.reg]``HL`` = address of last matching byte, or NULL if character is not found
+* Z80 extension: carry is set if character is not found
+
+[#strspn]
+== strspn - search a string for a set of characters
+
+==== Input
+
+* [.reg]``DE`` = [.ident]``s``
+* [.reg]``HL`` = [.ident]``accept``
+
+==== Output
+
+* [.reg]``HL`` = number of characters in the initial segment of [.ident]``s`` which consist only of characters from [.ident]``accept``
+
+[#strstr]
+== strstr - locate a substring
+
+==== Input
+
+* [.reg]``DE`` = [.ident]``haystack``
+* [.reg]``HL`` = [.ident]``needle``
+
+==== Output
+
+* [.reg]``HL`` = address of [.ident]``needle`` in [.ident]``haystack``
+
+[#strxfrm]
+== strxfrm - string transformation
+
+==== Input
+
+* [.reg]``DE`` = [.ident]``dest``
+* [.reg]``HL`` = [.ident]``src``
+* [.reg]``BC`` = [.ident]``n`` (maximum number of characters to copy)
+
+==== Output
+
+* [.reg]``HL`` = number of bytes required to store the transformed string in [.ident]``dest`` excluding the terminating '\0' character.
+
+[#implementation-notes]
+== Implementation notes
+
+In this implementation, some functions depend on one or more other functions to work correctly. The following table lists these functions and their dependencies.
+
+[cols='1a,1a',width=50%]
+|===
+|Function   |Depends on
+
+|``strcat`` |``strcpy``
+|``strcspn``|``strchr``
+|``strpbrk``|``strchr``
+|``strspn`` |``strchr``
+|``strstr`` |``strlen`` and ``strncmp``
+|``strxfrm``|``strchr`` and ``strlen``
+|===
+
+This means that, for example, if you include "strcat.asm", you should also include "strcpy.asm".
+
+[#bugs]
+== Bugs
+
+There are no known bugs in this version. However, two of the functions in the Standard (``strerror`` and ``strtok``) are missing in this implementation. I did not implement ``strerror`` because it's almost useless without more of the C Standard Library. I did not implement ``strtok`` for a few reasons, one being that it is not reentrant (it stores static data), another being that it modifies the original string. I may write ``strtok`` in a future version, but for now it's missing.
+
+[#version-history]
+== Version History
+
+* 2004-03-27. Wrote the ``strcmp`` function.
+* 2007-01-27. Wrote all (except for two) other string handling functions.
